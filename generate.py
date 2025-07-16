@@ -12,8 +12,7 @@ from transformers import XLMRobertaTokenizer, XLMRobertaForMaskedLM
 
 from data_gen import Data
 
-label_map = {"PAD":0, "O": 1, "B-PER":2, "I-PER":3, "B-ORG":4, "I-ORG":5,
-             "B-LOC":6, "I-LOC":7, "B-MISC":8, "I-MISC":9}
+label_map = {"PAD":4, "O": 0, "B":1, "I":2}
 
 def aug(entity_model, o_model, iterator, k, sub_idx):
 
@@ -93,7 +92,7 @@ def decode(entity_aug_tensor, o_aug_tensor, total_aug_tensor, input_tensor, toke
         entity_word, o_word, total_word = '', '', ''
         entity_aug_sent, o_aug_sent, total_aug_sent = [], [], []
 
-        special_masks = ['<B-PER>', '<I-PER>', '<B-ORG>', '<I-ORG>', '<B-LOC>', '<I-LOC>', '<B-MISC>', '<I-MISC>', '<En>', '<De>', '<Es>', '<Nl>']
+        special_masks = ['<B>', '<I>', '<En>', '<De>', '<Es>', '<Nl>']
         for entity_aug_sub, o_aug_sub, total_aug_sub, input_sub in zip(entity_aug_subs, o_aug_subs, total_aug_subs, input_subs):
             if input_sub[0] == '▁' or  input_sub in special_masks:
                 if entity_word != '':
@@ -140,6 +139,7 @@ if True:
     print("Running on ", device)
 
     SEED = args.seed
+    print('SEED:', SEED)
     random.seed(SEED)
     np.random.seed(SEED)
     torch.manual_seed(SEED)
@@ -165,7 +165,7 @@ if True:
     
     # Add entity labels as special tokens
     tokenizer.add_tokens(['<En>', '<De>', '<Es>', '<Nl>'], special_tokens=True)
-    tokenizer.add_tokens(['<B-PER>', '<I-PER>', '<B-ORG>', '<I-ORG>', '<B-LOC>', '<I-LOC>', '<B-MISC>', '<I-MISC>', '<O>'],
+    tokenizer.add_tokens(['<B>', '<I>', '<O>'],
                          special_tokens=False) # False so that they are not removed during decoding
     entity_model.resize_token_embeddings(len(tokenizer))
     o_model.resize_token_embeddings(len(tokenizer))
@@ -185,8 +185,9 @@ if True:
     for aug_text, ext in zip([entity_aug_text], ['entity']):
         with open(OUT_DIR + '.tmp', 'w') as filehandle:
             for sent in aug_text:
-                for word in sent:
-                    filehandle.write('%s\n' % word) #.lstrip('▁'))
+                for word in sent:               
+                    word = word.encode(encoding='ascii', errors='ignore')
+                    filehandle.write('%s\n' % word.decode()) #.lstrip('▁'))
                 filehandle.write('\n')
 
         with open(OUT_DIR + '.tmp', 'r') as filehandle, open(OUT_DIR+'.'+ext , 'w+') as outfile, open(IN_DIR, 'r') as infile:
@@ -195,15 +196,16 @@ if True:
             inlines = infile.readlines()
             in_idx = 0
             for tmp_idx in range(len(tmplines)):
-                special_masks = ['<B-PER>', '<I-PER>', '<B-ORG>', '<I-ORG>', '<B-LOC>', '<I-LOC>', '<B-MISC>', '<I-MISC>', '<En>', '<De>', '<Es>', '<Nl>']
+                special_masks = ['<B>', '<I>', '<En>', '<De>', '<Es>', '<Nl>']
                 if tmplines[tmp_idx].rstrip('\n') in special_masks: # remove special masks
                     continue
-                if tmplines[tmp_idx] != '\n':
-                    assert inlines[in_idx] != '\n'
-                    outline = tmplines[tmp_idx].rstrip('\n').split()[0][1:] + '\t' + inlines[in_idx].rstrip('\n').split()[-1]
-                    outfile.write(outline + '\n')
+                if tmplines[tmp_idx] != '\n' and in_idx < len(inlines) and tmp_idx < len(tmplines):
+                    #assert inlines[in_idx] != '\n'
+                    if len(inlines[in_idx]) > 1:
+                        outline = tmplines[tmp_idx].rstrip('\n') + '\t' + inlines[in_idx].rstrip('\n').split()[-1]
+                        outfile.write(outline + '\n')
                 else:
-                    while inlines[in_idx] != '\n':
+                    while in_idx < len(inlines) and inlines[in_idx] != '\n':
                         in_idx += 1
                         num_skip_lines += 1
                     outfile.write('\n')
@@ -211,17 +213,4 @@ if True:
 
         # Remove tmp file
         os.remove(OUT_DIR + '.tmp')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        os.remove(CKPT_DIR)
