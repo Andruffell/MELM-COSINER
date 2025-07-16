@@ -63,7 +63,7 @@ class MultiLabelTextProcessor():
 
         data_df = pd.read_csv(os.path.join(self.data_dir, dsplit + ".txt"),
                               sep=" |\t", header=None, skip_blank_lines=False,
-                              engine='python', error_bad_lines=False, quoting=3,
+                              engine='python', on_bad_lines='skip', quoting=3,
                               keep_default_na = False,
                               na_values=[''])
         return self._create_examples(data_df)
@@ -131,8 +131,8 @@ class Data():
                 # Mask named entities in sentence, and generate entity mask
                 if label != "O":
                     same_class_labels = ['B-'+label[2:], 'I-'+label[2:]]
-                    diff_class_labels = [l for l in ['O', 'B-PER', 'I-PER', 'B-LOC', 'I-LOC', 'B-ORG', 'I-ORG', 'B-MISC', 'I-MISC'] if l not in same_class_labels]
-                    assert len(diff_class_labels) == 7
+                    diff_class_labels = [l for l in ['O', 'B', 'I'] if l not in same_class_labels]
+                    #assert len(diff_class_labels) == 7
 
                     for count in range(subword_len[i]):
                         if subword_start[i]+count >= max_seq_length:
@@ -183,7 +183,7 @@ class Data():
 
     def label_to_token_id(self,label):
         label = '<' + label + '>'
-        assert label in ['<O>', '<B-PER>', '<I-PER>', '<B-ORG>', '<I-ORG>', '<B-LOC>', '<I-LOC>', '<B-MISC>', '<I-MISC>']
+        assert label in ['<O>', '<B>', '<I>']
 
         return self.tokenizer.convert_tokens_to_ids(label)
-
+    
