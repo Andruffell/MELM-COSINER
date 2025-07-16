@@ -15,8 +15,7 @@ from tqdm import tqdm
 from transformers import XLMRobertaTokenizer, XLMRobertaForMaskedLM
 from data import Data
 
-label_map = {"PAD":0, "O": 1, "B-PER":2, "I-PER":3, "B-ORG":4, "I-ORG":5,
-             "B-LOC":6, "I-LOC":7, "B-MISC":8, "I-MISC":9}
+label_map = {"PAD":4, "O": 0, "B":1, "I":2}
 
 def train(model, iterator, optimizer, clip, grad_acc):
 
@@ -145,7 +144,7 @@ if True:
 
     # Add entity labels as special tokens
     tokenizer.add_tokens(['<En>', '<De>', '<Es>', '<Nl>'], special_tokens=True)
-    tokenizer.add_tokens(['<B-PER>', '<I-PER>', '<B-ORG>', '<I-ORG>', '<B-LOC>', '<I-LOC>', '<B-MISC>', '<I-MISC>','<O>'],
+    tokenizer.add_tokens(['<B>', '<I>', '<O>'],
                          special_tokens=True)
     model.resize_token_embeddings(len(tokenizer))
 
@@ -202,3 +201,4 @@ if True:
     print("Training finished...")
     print(f'\n Best valid loss until epoch {epoch} is {best_valid_loss:.3f} at epoch {best_valid_epoch + 1}',
           f'\n valid acc is {best_valid_acc * 100:.2}%, valid entity acc is {best_valid_entity_acc * 100:.2f}%')
+    
