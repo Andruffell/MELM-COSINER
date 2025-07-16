@@ -70,7 +70,7 @@ class MultiLabelTextProcessor():
 
         data_df = pd.read_csv(filename,
                               sep=" |\t", header=None, skip_blank_lines=False,
-                              engine='python', error_bad_lines=False, quoting=3,
+                              engine='python', on_bad_lines='skip', quoting=3,
                               keep_default_na = False,
                               na_values=['']) 
 
@@ -195,8 +195,6 @@ class Data():
 
     def label_to_token_id(self,label):
         label = '<' + label + '>'
-        assert label in ['<B-PER>', '<I-PER>', '<B-ORG>', '<I-ORG>', '<B-LOC>', '<I-LOC>', '<B-MISC>', '<I-MISC>']
+        assert label in ['<B>', '<I>',]
 
         return self.tokenizer.convert_tokens_to_ids(label)
-
-
